@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import Logo from '../../assets/images/Logo.jpeg';
+import Logo from '../../assets/images/Logo.png';
 import LoginBg from '../../assets/images/image3.jpeg';
 import { motion } from 'framer-motion';
+import ParticlesBackground from '../../components/common/ParticlesBackground';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -32,9 +33,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-spot-dark p-4" style={{ backgroundImage: `url(${LoginBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="min-h-screen flex items-center justify-center bg-spot-dark p-4 relative" style={{ backgroundImage: `url(${LoginBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <ParticlesBackground />
       <motion.div 
-        className="bg-spot-darker/90 backdrop-blur-md p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-md border border-spot-blue/30"
+        className="bg-spot-darker/90 backdrop-blur-md p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-md border border-spot-blue/30 relative z-10"
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -59,7 +61,7 @@ const Login = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-accent focus:border-spot-accent outline-none transition-all"
+              className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-cyan focus:border-spot-cyan outline-none transition-all"
             />
           </div>
           
@@ -75,7 +77,7 @@ const Login = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-accent focus:border-spot-accent outline-none transition-all"
+              className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-cyan focus:border-spot-cyan outline-none transition-all"
             />
           </div>
 
@@ -83,7 +85,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-spot-accent hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spot-accent transition-all disabled:opacity-50"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-black bg-spot-cyan hover:bg-spot-cyan-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spot-cyan transition-all disabled:opacity-50"
             >
               {loading ? 'جارِ الدخول...' : 'تسجيل الدخول'}
             </button>

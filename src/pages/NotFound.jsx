@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Logo from '../assets/images/Logo.jpeg';
+import Logo from '../assets/images/Logo.png';
 
 const NotFound = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-spot-dark text-white p-4">
       <img className="h-20 mx-auto mb-8" src={Logo} alt="SPOT Logo" />
-      <h1 className="text-9xl font-extrabold text-spot-accent tracking-widest">404</h1>
+      <h1 className="text-9xl font-extrabold text-spot-cyan tracking-widest">404</h1>
       <div className="bg-spot-darker px-4 py-2 rounded-md text-lg font-medium mb-6">
         الصفحة غير موجودة
       </div>
