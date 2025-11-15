@@ -1,20 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Particles from 'react-tsparticles';
 import { loadSlim } from 'tsparticles-slim';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
-import ParticlesBackground from '../../components/common/ParticlesBackground';
+import api from '/src/lib/api.js';
+import Navbar from '../../components/layout/Navbar.jsx';
+// تم حذف الفوتر من هنا
+import ParticlesBackground from '../../components/common/ParticlesBackground.jsx';
+import TeacherCard from '../../components/parent/TeacherCard.jsx';
+import { FaSpinner } from 'react-icons/fa';
 
 import Logo from '../../assets/images/Logo.png';
 import heroBg from '../../assets/images/image3.jpeg';
-import teacherAvatar1 from '../../assets/images/image4.jpeg';
-import teacherAvatar2 from '../../assets/images/image2.jpeg';
 
 const HomePage = () => {
+  // ... (نفس الكود لجلب المعلمين والأنيميشن)
   const [heroVisible, setHeroVisible] = useState(false);
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setHeroVisible(true), 300);
+    
+    const fetchTeachers = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/public/teachers'); 
+        setTeachers(res.data);
+      } catch (err) {
+        setError('فشل في تحميل قائمة المعلمين. الرجاء المحاولة لاحقاً.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTeachers();
     return () => clearTimeout(timer);
   }, []);
 
@@ -57,6 +77,7 @@ const HomePage = () => {
       <ParticlesBackground />
       <Navbar />
 
+      {/* --- Hero Section --- */}
       <section id="hero">
         <div
           className="hero-background"
@@ -112,6 +133,7 @@ const HomePage = () => {
         </a>
       </section>
 
+      {/* --- Teachers Section --- */}
       <section
         id="teachers-section"
         className="py-24 bg-spot-dark relative z-10"
@@ -128,66 +150,29 @@ const HomePage = () => {
           </h2>
           <p className="text-xl text-spot-light/80 text-center max-w-2xl mx-auto mb-16">
             تصفح قائمة المعلمين الخبراء لدينا. تم تصميم هذا النظام لكسر حواجز
-            التواصل وتقديم تقارير أسبوعية شفافة تساعدك على متابعة تطور الأداء
+            التواصل وتقديم تقارير شفافة تساعدك على متابعة تطور الأداء
             خطوة بخطوة.
           </p>
-          <div className="teacher-grid">
-            <a href="#" className="teacher-container">
-              <img
-                src={teacherAvatar1}
-                alt="أفاتار المعلم"
-                className="teacher-avatar"
-              />
-              <img
-                src={teacherAvatar1}
-                alt="صورة غلاف المعلم"
-                className="info-cover-image"
-              />
-              <div className="info-content">
-                <h3>أ. محمود ناجي</h3>
-                <p>تخصص فيزياء وكيمياء</p>
-                <span className="details-button">عرض التقارير</span>
-              </div>
-            </a>
-            <a href="#" className="teacher-container">
-              <img
-                src={teacherAvatar2}
-                alt="أفاتار المعلم"
-                className="teacher-avatar"
-              />
-              <img
-                src={teacherAvatar2}
-                alt="صورة غلاف المعلم"
-                className="info-cover-image"
-              />
-              <div className="info-content">
-                <h3>أ. أحمد علي</h3>
-                <p>تخصص رياضيات</p>
-                <span className="details-button">عرض التقارير</span>
-              </div>
-            </a>
-            <a href="#" className="teacher-container">
-              <img
-                src={teacherAvatar1}
-                alt="أفاتار المعلم"
-                className="teacher-avatar"
-              />
-              <img
-                src={teacherAvatar1}
-                alt="صورة غلاف المعلم"
-                className="info-cover-image"
-              />
-              <div className="info-content">
-                <h3>أ. سارة محمد</h3>
-                <p>تخصص لغة إنجليزية</p>
-                <span className="details-button">عرض التقارير</span>
-              </div>
-            </a>
-          </div>
+          
+          {loading && (
+            <div className="text-center p-10">
+              <FaSpinner className="animate-spin text-spot-cyan text-5xl mx-auto" />
+            </div>
+          )}
+          {error && (
+            <p className="text-center text-red-400 bg-red-900/50 p-4 rounded-lg">{error}</p>
+          )}
+
+          {!loading && !error && (
+            <div className="teacher-grid">
+              {teachers.map(teacher => (
+                <TeacherCard key={teacher.id} teacher={teacher} />
+              ))}
+            </div>
+          )}
+          
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

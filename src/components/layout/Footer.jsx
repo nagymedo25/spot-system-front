@@ -3,7 +3,7 @@ import Logo from '../../assets/images/Logo.png';
 
 const Footer = () => {
   return (
-    <footer className="relative z-10 mt-20">
+    <footer className="relative z-10">
       <div className="footer-waves-container">
         <svg
           className="footer-waves-svg"

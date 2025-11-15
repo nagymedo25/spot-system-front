@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useReducer } from 'react';
 import api from '../lib/api';
 import { jwtDecode } from 'jwt-decode';
+import FullPageLoader from '../components/common/FullPageLoader.jsx'; // <-- 1. استيراد اللودر
 
 const AuthContext = createContext();
 
@@ -19,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, {
     user: null,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // <-- هذا هو المتحكم باللودر
 
   useEffect(() => {
     const token = localStorage.getItem('spot_token');
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }) => {
         if (decodedToken.exp * 1000 < Date.now()) {
           localStorage.removeItem('spot_token');
           dispatch({ type: 'LOGOUT' });
+          setLoading(false); // <-- إيقاف اللودر
         } else {
           api.get('/auth/me')
             .then(res => {
@@ -37,14 +39,19 @@ export const AuthProvider = ({ children }) => {
             .catch(() => {
               localStorage.removeItem('spot_token');
               dispatch({ type: 'LOGOUT' });
+            })
+            .finally(() => {
+              setLoading(false); // <-- إيقاف اللودر
             });
         }
       } catch (error) {
         localStorage.removeItem('spot_token');
         dispatch({ type: 'LOGOUT' });
+        setLoading(false); // <-- إيقاف اللودر
       }
+    } else {
+      setLoading(false); // <-- إيقاف اللودر (إذا لم يكن هناك توكن)
     }
-    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
@@ -62,7 +69,8 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ ...state, dispatch, login, logout, loading }}>
-      {!loading && children}
+      {/* 2. عرض اللودر إذا كان 'loading' صحيحاً، وإلا اعرض التطبيق */}
+      {loading ? <FullPageLoader /> : children}
     </AuthContext.Provider>
   );
 };
