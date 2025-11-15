@@ -4,59 +4,95 @@ import api from '/src/lib/api.js';
 import Navbar from '../../components/layout/Navbar.jsx';
 import ParticlesBackground from '../../components/common/ParticlesBackground.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaSearch, FaSpinner, FaTimes, FaFileAlt } from 'react-icons/fa';
+// [تعديل] إضافة مكتبات الـ PDF
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+// [تعديل] إزالة أيقونات العداد
+import { FaSearch, FaSpinner, FaTimes, FaFileAlt, FaFilePdf } from 'react-icons/fa';
 import PlaceholderImg from '../../assets/images/image4.jpeg';
+import Logo from '../../assets/images/Logo.png';
 
-// --- مكون الجدول المذهل (جديد) ---
+// --- (مكون الجدول والأنيميشن - لا تغيير) ---
+const tableContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+const rowVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+y: 0,
+    transition: { type: 'spring', stiffness: 100 }
+  },
+};
 const ReportTable = ({ data }) => {
   if (!data || !data.columns || !data.rows || data.rows.length === 0) {
     return <p className="text-spot-light/70 text-center p-4">لا توجد بيانات مسجلة في هذا التقرير.</p>;
   }
-
   return (
-    <div className="overflow-x-auto rounded-lg border border-spot-blue/30">
-      <table className="w-full min-w-max text-right">
-        <thead className="bg-spot-dark/50">
-          <tr>
-            <th className="p-4 text-white font-semibold w-40"> </th>
-            {data.columns.map((col, index) => (
-              <th key={index} className="p-4 text-white font-semibold">{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-spot-blue/50">
-          {data.rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-spot-dark/70 transition-colors">
-              <td className="p-4 font-semibold text-spot-cyan align-top">{row.rowName}</td>
-              {row.cells.map((cell, cellIndex) => (
-                <td key={cellIndex} className="p-4 text-white align-top whitespace-pre-wrap min-w-[150px]">
-                  {cell || <span className="text-spot-light/30">N/A</span>}
-                </td>
+    <div className="responsive-table-container">
+      <div className="overflow-x-auto rounded-lg border border-spot-blue/30">
+        <table className="w-full min-w-max text-right">
+          <thead className="bg-spot-dark/50">
+            <tr>
+              <th className="p-4 text-white font-semibold w-40"> </th>
+              {data.columns.map((col, index) => (
+                <th key={index} className="p-4 text-white font-semibold">{col}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <AnimatePresence>
+            <motion.tbody 
+              className="divide-y divide-spot-blue/50"
+              variants={tableContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {data.rows.map((row, rowIndex) => (
+                <motion.tr 
+                  key={rowIndex} 
+                  className="hover:bg-spot-dark/70 transition-colors"
+                  variants={rowVariants}
+                >
+                  <td data-label="المهمة" className="p-4 font-semibold text-spot-cyan align-top">{row.rowName}</td>
+                  {row.cells.map((cell, cellIndex) => (
+                    <td 
+                      key={cellIndex} 
+                      data-label={data.columns[cellIndex]}
+                      className="p-4 text-white align-top whitespace-pre-wrap min-w-[150px]"
+                    >
+                      {cell || <span className="text-spot-light/30">N/A</span>}
+                    </td>
+                  ))}
+                </motion.tr>
+              ))}
+            </motion.tbody>
+          </AnimatePresence>
+        </table>
+      </div>
     </div>
   );
 };
-
-// --- متغيرات الأنيميشن ---
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1, // تأثير تتابع ظهور العناصر
+      staggerChildren: 0.1,
     },
   },
 };
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
   visible: { 
     opacity: 1, 
     y: 0,
+    scale: 1,
     transition: { type: 'spring', stiffness: 100 }
   },
 };
@@ -64,16 +100,19 @@ const itemVariants = {
 // --- المكون الرئيسي ---
 const ReportView = () => {
   const location = useLocation();
-  const { teacher } = location.state || {}; // جلب بيانات المعلم
+  const { teacher } = location.state || {};
 
   const [studentCode, setStudentCode] = useState('');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searched, setSearched] = useState(false); // لتتبع إذا ما تم البحث
+  const [searched, setSearched] = useState(false);
+  
+  // [تعديل] حالة جديدة لإظهار تحميل الـ PDF
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [currentReportId, setCurrentReportId] = useState(null); // لتتبع أي تقرير يتم تحميله
 
   if (!teacher) {
-    // ... (صفحة الخطأ - لا تغيير)
     return (
       <div className="min-h-screen bg-spot-dark text-white flex flex-col items-center justify-center">
         <h2 className="text-2xl mb-4">خطأ: لم يتم تحديد المعلم.</h2>
@@ -103,6 +142,67 @@ const ReportView = () => {
       setLoading(false);
     }
   };
+  
+  // [تعديل جذري] دالة التحميل المباشر كـ PDF
+  const handleDownloadPDF = async (reportId) => {
+    const reportElement = document.getElementById(`report-${reportId}`);
+    const teacherInfoElement = document.querySelector('.teacher-info-card');
+    if (!reportElement || !teacherInfoElement) return;
+
+    setIsDownloading(true);
+    setCurrentReportId(reportId);
+
+    // إضافة الكلاسات مؤقتاً لتطبيق تنسيقات "الطباعة"
+    document.body.classList.add('is-printing');
+    reportElement.classList.add('print-this-report');
+    teacherInfoElement.classList.add('print-this-report');
+
+    try {
+      // استخدام html2canvas لالتقاط العناصر بتنسيقاتها
+      const pdf = new jsPDF('p', 'mm', 'a4'); // A4 portrait
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // 1. التقاط بطاقة المعلم
+      const teacherCanvas = await html2canvas(teacherInfoElement, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#ffffff'
+      });
+      const teacherImgData = teacherCanvas.toDataURL('image/png');
+      const teacherImgProps = pdf.getImageProperties(teacherImgData);
+      const teacherImgHeight = (teacherImgProps.height * pdfWidth) / teacherImgProps.width;
+      
+      pdf.addImage(teacherImgData, 'PNG', 0, 0, pdfWidth, teacherImgHeight);
+      
+      // 2. التقاط التقرير
+      const reportCanvas = await html2canvas(reportElement, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#ffffff'
+      });
+      const reportImgData = reportCanvas.toDataURL('image/png');
+      const reportImgProps = pdf.getImageProperties(reportImgData);
+      const reportImgHeight = (reportImgProps.height * pdfWidth) / reportImgProps.width;
+
+      pdf.addPage();
+      pdf.addImage(reportImgData, 'PNG', 0, 0, pdfWidth, reportImgHeight);
+      
+      // 3. الحفظ
+      const fileName = `Report-${teacher.name.replace(' ', '_')}-${studentCode || 'student'}.pdf`;
+      pdf.save(fileName);
+
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      setError("فشل إنشاء ملف الـ PDF. حاول مرة أخرى.");
+    } finally {
+      // إزالة الكلاسات في كل الأحوال
+      document.body.classList.remove('is-printing');
+      reportElement.classList.remove('print-this-report');
+      teacherInfoElement.classList.remove('print-this-report');
+      setIsDownloading(false);
+      setCurrentReportId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-spot-dark">
@@ -116,21 +216,28 @@ const ReportView = () => {
         animate="visible"
       >
         
-        {/* --- 1. معلومات المعلم الأنيقة --- */}
+        {/* --- 1. معلومات المعلم --- */}
         <motion.div 
           variants={itemVariants}
-          className="flex flex-col sm:flex-row items-center gap-6 mb-10 p-6 bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30"
+          whileHover={{ scale: 1.01, borderColor: '#00f0ff' }}
+          className="teacher-info-card flex flex-col sm:flex-row items-center gap-6 mb-10 p-6 bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30 transition-all"
         >
+          {/* لوجو للطباعة فقط */}
+          <img 
+            src={Logo} 
+            alt="SPOT Logo" 
+            className="print-logo"
+          />
           <img 
             src={teacher.avatar_url || PlaceholderImg} 
             alt={teacher.name}
-            className="w-32 h-32 rounded-full object-cover border-4 border-spot-cyan shadow-cyan-glow"
+            className="teacher-avatar-print w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-spot-cyan shadow-cyan-glow"
           />
           <div>
-            <h1 className="text-4xl font-bold text-white mb-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
               تقارير الطالب لدى: <span className="text-spot-cyan">{teacher.name}</span>
             </h1>
-            <p className="text-2xl text-spot-light">{teacher.specialty}</p>
+            <p className="text-xl md:text-2xl text-spot-light">{teacher.specialty}</p>
           </div>
         </motion.div>
 
@@ -138,14 +245,14 @@ const ReportView = () => {
         <motion.form 
           variants={itemVariants}
           onSubmit={handleSubmit} 
-          className="mb-10 p-6 bg-spot-darker rounded-lg shadow-lg border border-spot-blue/30"
+          className="report-search-form mb-10 p-6 bg-spot-darker rounded-lg shadow-lg border border-spot-blue/30"
         >
           <label htmlFor="studentCode" className="block text-lg font-medium text-spot-light mb-3">
             الرجاء إدخال كود الطالب
           </label>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow">
-              <input
+              <motion.input
                 id="studentCode"
                 type="text"
                 value={studentCode}
@@ -153,13 +260,22 @@ const ReportView = () => {
                 required
                 className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-cyan focus:border-spot-cyan outline-none transition-all pr-10"
                 placeholder="أدخل الكود هنا..."
+                whileFocus={{ 
+                  scale: 1.02, 
+                  borderColor: '#00f0ff', 
+                  boxShadow: '0 0 10px rgba(0, 240, 255, 0.3)' 
+                }}
               />
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-spot-light/50" />
             </div>
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
               className="py-3 px-8 rounded-lg shadow-sm text-lg font-medium text-black bg-spot-cyan hover:bg-spot-cyan-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-spot-cyan transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              whileHover={{ 
+                scale: loading ? 1 : 1.05, 
+                boxShadow: loading ? 'none' : '0 0 15px rgba(0, 240, 255, 0.5)' 
+              }}
             >
               {loading ? (
                 <>
@@ -169,7 +285,7 @@ const ReportView = () => {
               ) : (
                 'استعلام'
               )}
-            </button>
+            </motion.button>
           </div>
         </motion.form>
 
@@ -204,27 +320,48 @@ const ReportView = () => {
           {!loading && !error && reports.length > 0 && (
             <motion.div 
               className="space-y-8"
-              variants={containerVariants} // حاوية جديدة لتأثير التتابع
+              variants={containerVariants} 
               initial="hidden"
               animate="visible"
             >
-              {reports.map(report => (
-                <motion.div 
-                  key={report.id}
-                  className="bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30"
-                  variants={itemVariants} // أنيميشن لكل بطاقة تقرير
-                >
-                  <div className="p-4 bg-spot-dark/50 rounded-t-lg">
-                    <h3 className="text-2xl font-bold text-white mb-1">{report.title || 'تقرير أسبوعي'}</h3>
-                    <p className="text-spot-light">
-                      {/* === (الإصلاح) === */}
-                      تاريخ بدء الأسبوع: {new Date(report.week_start_date).toLocaleDateString('ar-EG')}
-                    </p>
-                    {/* === (نهاية الإصلاح) === */}
-                  </div>
-                  <ReportTable data={report.data_json} />
-                </motion.div>
-              ))}
+              {reports.map(report => {
+                const isCurrentDownload = isDownloading && currentReportId === report.id;
+                return (
+                  <motion.div 
+                    key={report.id}
+                    id={`report-${report.id}`}
+                    className="report-card-container bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30"
+                    variants={itemVariants}
+                  >
+                    <div className="p-4 bg-spot-dark/50 rounded-t-lg">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">{report.title || 'تقرير أسبوعي'}</h3>
+                        
+                        {/* [تعديل] زر التحميل المباشر */}
+                        <motion.button
+                          onClick={() => handleDownloadPDF(report.id)}
+                          disabled={isDownloading}
+                          className="print-pdf-button flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium text-spot-cyan bg-spot-dark hover:bg-spot-blue transition-all border border-spot-blue disabled:opacity-50"
+                          whileHover={{ scale: isDownloading ? 1 : 1.05, color: isDownloading ? '' : '#e0f4f4' }}
+                        >
+                          {isCurrentDownload ? (
+                            <>
+                              <FaSpinner className="animate-spin" />
+                              <span>جاري الإنشاء...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaFilePdf />
+                              <span>تحميل كـ PDF</span>
+                            </>
+                          )}
+                        </motion.button>
+                      </div>
+                    </div>
+                    <ReportTable data={report.data_json} />
+                  </motion.div>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>

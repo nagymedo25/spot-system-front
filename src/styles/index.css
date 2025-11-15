@@ -390,3 +390,191 @@ body {
   }
 }
 
+/* === RESPONSIVE TABLE (CARD VIEW) === */
+/* هذا الكود لتنسيق الجدول على الهاتف */
+.responsive-table-container {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .responsive-table-container table {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table-container thead {
+    display: none;
+  }
+  .responsive-table-container tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table-container tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border: 1px solid #1f4068;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  .responsive-table-container td {
+    display: block;
+    width: 100%;
+    text-align: right;
+    padding-right: 1rem;
+    padding-left: 50%;
+    position: relative;
+    border: none;
+    border-bottom: 1px solid #1f4068;
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+  }
+  .responsive-table-container tr:last-child td:last-child {
+    border-bottom: none;
+  }
+  .responsive-table-container td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 45%;
+    height: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-weight: 700;
+    text-align: left;
+    color: #00f0ff;
+    background-color: rgba(31, 64, 104, 0.2);
+    display: flex;
+    align-items: center;
+  }
+  .responsive-table-container td:first-child {
+    background-color: #101827;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    padding-left: 1rem;
+    text-align: right;
+  }
+  .responsive-table-container td:first-child:before {
+    display: none;
+  }
+}
+
+/* === (تعديل) كلاسات للتحكم بالعناصر للتحويل إلى PDF === */
+/*
+  ملاحظة: نحن نستخدم @media print
+  لأن مكتبة html2canvas تقوم بقراءة هذه التنسيقات
+  عندما نضيف كلاس .is-printing للجسم
+*/
+.print-logo {
+  display: none; /* إخفاؤه افتراضياً */
+}
+
+/* === (تعديل) تنسيقات "الطباعة" (التي تستخدمها html2canvas) === */
+@media print {
+  @page {
+    size: A4;
+    margin: 0.75in;
+  }
+
+  body {
+    background-color: #ffffff !important;
+  }
+
+  /* إخفاء كل شيء بشكل افتراضي */
+  body.is-printing > * {
+    display: none !important;
+  }
+  
+  /* إظهار العناصر المحددة للتحويل فقط (بطاقة المعلم + التقرير) */
+  body.is-printing .print-this-report {
+    display: block !important;
+    margin-bottom: 1.5rem !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    page-break-inside: avoid;
+  }
+
+  /* --- تنسيق رأس الـ PDF (بطاقة المعلم) --- */
+  .teacher-info-card {
+    border-bottom: 2px solid #ddd !important;
+    padding-bottom: 1rem !important;
+  }
+  .print-logo {
+    display: block !important; /* إظهار اللوجو */
+    height: 40px;
+    width: auto;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+  .teacher-avatar-print {
+    display: none !important; /* إخفاء صورة المعلم */
+  }
+  
+  /* إخفاء العناصر غير المرغوب بها تماماً */
+  .navbar-bg, footer, #tsparticles, .custom-cursor,
+  .report-search-form, .print-pdf-button {
+    display: none !important;
+  }
+
+  /* --- تنسيق التقرير للـ PDF --- */
+  .report-card-container {
+    padding-top: 1rem;
+  }
+  
+  /* إعادة تعيين الألوان للـ PDF (خلفية بيضاء وخط أسود) */
+  .bg-spot-darker, .bg-spot-dark, .bg-spot-dark {
+    background-color: #ffffff !important;
+  }
+  .text-white, .text-spot-light, .text-spot-cyan, .text-spot-cyan-dark,
+  h1, h3, p {
+    color: #000000 !important;
+  }
+  
+  /* --- تنسيق الجدول للـ PDF (إجباره على مظهر الحاسوب) --- */
+  .responsive-table-container table { display: table !important; width: 100% !important; }
+  .responsive-table-container thead { display: table-header-group !important; }
+  .responsive-table-container tr { display: table-row !important; page-break-inside: avoid; }
+  .responsive-table-container td,
+  .responsive-table-container th {
+    display: table-cell !important;
+    padding: 10px !important;
+    border: 1px solid #ccc !important;
+    color: #000 !important;
+    padding-left: 10px !important; 
+    position: static !important;
+    background-color: #fff !important;
+    min-height: auto !important;
+    align-items: initial !important;
+    font-size: 9pt !important;
+    line-height: 1.4 !important;
+    white-space: normal !important; /* للسماح بالتفاف النص الطويل */
+  }
+  .responsive-table-container td:before { display: none !important; }
+  .responsive-table-container thead { background-color: #f2f2f2 !important; }
+  .responsive-table-container th { font-weight: bold !important; color: #000 !important; }
+
+  /* --- إضافة الفوتر (حقوق الملكية) --- */
+  .report-card-container::after {
+    content: 'PDF صنع بواسطة Mahmoud Nagy - SPOT System';
+    display: block;
+    text-align: center;
+    font-size: 10pt;
+    color: #777;
+    margin-top: 1.5rem;
+    border-top: 1px solid #ccc;
+    padding-top: 0.5rem;
+    page-break-before: always;
+  }
+  
+  .teacher-info-card.print-this-report::after {
+    content: '' !important;
+    display: none !important;
+  }
+}

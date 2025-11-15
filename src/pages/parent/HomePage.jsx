@@ -96,7 +96,7 @@ const HomePage = () => {
             }`}
             style={{ transitionDelay: '0.4s' }}
           >
-            SPOT THE DIFFERENCE
+            SPOT IS THE DIFFERENCE
           </h1>
           <p
             className={`text-xl md:text-2xl text-spot-light font-light max-w-2xl mx-auto fade-in-up ${
