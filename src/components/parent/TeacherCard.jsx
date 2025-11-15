@@ -3,17 +3,19 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PlaceholderImg from '../../assets/images/image4.jpeg';
 
+// FIX: تعريف الحالة الأساسية (initial) كـ "كارت مفتوح/مستطيل"
 const cardVariants = {
   initial: {
-    width: 200,
-    height: 200,
-    borderRadius: '50%',
+    width: 320,
+    height: 400,
+    borderRadius: '1.5rem', // كارت كامل
     backgroundColor: '#0c121e',
-    borderColor: '#1f4068',
-    boxShadow: '0 0 15px rgba(0, 0, 0, 0.5)',
+    borderColor: '#00f0ff',
+    boxShadow: '0 0 50px rgba(0, 240, 255, 0.4)',
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] },
   },
   hover: {
+    // حالة التحويم على الديسكتوب تبقى كارت كامل (لأنها تبدأ من حالة الانهيار)
     width: 320,
     height: 400,
     borderRadius: '1.5rem',
@@ -25,8 +27,10 @@ const cardVariants = {
 };
 
 const ringVariants = {
+  // FIX: إخفاء حلقة التوهج تماماً بشكل افتراضي (للجوال)
   initial: {
-    opacity: 1,
+    opacity: 0,
+    scale: 1.5,
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] },
   },
   hover: {
@@ -38,12 +42,13 @@ const ringVariants = {
 
 const avatarVariants = {
   initial: {
-    width: 180,
-    height: 180,
-    borderWidth: '4px',
-    borderColor: '#101827',
-    transform: 'translateY(0px)',
-    boxShadow: '0 0 0px rgba(0, 240, 255, 0)',
+    width: 120,
+    height: 120,
+    borderWidth: '6px',
+    borderColor: '#00f0ff',
+    borderRadius: '0.75rem', // <<< FIX: أفاتار مربع مستدير
+    transform: 'translateY(-160px)',
+    boxShadow: '0 0 20px rgba(0, 240, 255, 0.5)',
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] },
   },
   hover: {
@@ -51,21 +56,21 @@ const avatarVariants = {
     height: 120,
     borderWidth: '6px',
     borderColor: '#00f0ff',
-    transform: 'translateY(-160px)', // تم التعديل ليناسب التصميم في index.css
+    borderRadius: '0.75rem', // أفاتار مربع مستدير
+    transform: 'translateY(-160px)',
     boxShadow: '0 0 20px rgba(0, 240, 255, 0.5)',
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] },
   },
 };
 
-// --- (الإضافة) متغيرات صورة الغلاف ---
 const coverImageVariants = {
   initial: {
-    opacity: 0,
-    scale: 1.1,
+    opacity: 0.3, // FIX: إظهار الغلاف في الوضع الافتراضي (الهاتف)
+    scale: 1,
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] }
   },
   hover: {
-    opacity: 0.3, // (كما هو معرف في index.css)
+    opacity: 0.3,
     scale: 1,
     transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] }
   }
@@ -74,13 +79,13 @@ const coverImageVariants = {
 
 const infoVariants = {
   initial: {
-    opacity: 0,
-    transform: 'translateY(30px)',
-    transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+    opacity: 1, // FIX: إظهار المحتوى في الوضع الافتراضي (الهاتف)
+    transform: 'translateY(-30px)',
+    transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.1 },
   },
   hover: {
     opacity: 1,
-    transform: 'translateY(-30px)', // تم التعديل ليناسب التصميم في index.css
+    transform: 'translateY(-30px)',
     transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1], delay: 0.1 },
   },
 };
@@ -95,6 +100,7 @@ const TeacherCard = ({ teacher }) => {
       whileHover="hover"
       className="teacher-container relative flex justify-center items-center cursor-pointer border"
     >
+      
       <motion.div
         variants={ringVariants}
         className="absolute z-0 inset-[-4px] rounded-full [background:conic-gradient(from_0deg,#00f0ff,transparent_40%,transparent_80%,#00f0ff)] animate-spin"
@@ -105,20 +111,19 @@ const TeacherCard = ({ teacher }) => {
         src={imageUrl}
         alt={teacher.name}
         variants={avatarVariants}
-        className="teacher-avatar rounded-full object-cover relative z-10" // <-- استخدام الكلاس الأصلي
+        className="teacher-avatar object-cover relative z-10" 
       />
       
-      {/* --- (الإصلاح) إرجاع صورة الغلاف المفقودة --- */}
       <motion.img
         src={imageUrl}
         alt="صورة غلاف المعلم"
         variants={coverImageVariants}
-        className="info-cover-image" // <-- الكلاس من index.css
+        className="info-cover-image" 
       />
       
       <motion.div
         variants={infoVariants}
-        className="info-content absolute w-full text-center z-20" // <-- استخدام الكلاس الأصلي
+        className="info-content absolute w-full text-center z-20" 
       >
         <h3 className="text-2xl font-bold text-white mb-1">{teacher.name}</h3>
         <p className="text-base text-spot-cyan mb-4">{teacher.specialty}</p>

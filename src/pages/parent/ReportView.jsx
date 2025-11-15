@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import api from '/src/lib/api.js';
 import Navbar from '../../components/layout/Navbar.jsx';
@@ -103,15 +103,16 @@ const ReportView = () => {
   const { teacher } = location.state || {};
 
   const [studentCode, setStudentCode] = useState('');
-  const [reports, setReports] = useState([]);
+  // reportsList now holds the report objects including the new 'report_identifier'
+  const [reportsList, setReportsList] = useState([]); 
+  const [selectedReport, setSelectedReport] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
-  
-  // [تعديل] حالة جديدة لإظهار تحميل الـ PDF
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [currentReportId, setCurrentReportId] = useState(null); // لتتبع أي تقرير يتم تحميله
+  const [selectedReportId, setSelectedReportId] = useState('');
 
+  const [isDownloading, setIsDownloading] = useState(false);
+  
   if (!teacher) {
     return (
       <div className="min-h-screen bg-spot-dark text-white flex flex-col items-center justify-center">
@@ -126,16 +127,24 @@ const ReportView = () => {
     setError('');
     setLoading(true);
     setSearched(true);
-    setReports([]);
+    setReportsList([]);
+    setSelectedReport(null);
+    setSelectedReportId('');
     try {
+      // The backend now returns a list of reports with 'report_identifier'
       const res = await api.post('/public/query-report', {
         teacher_id: teacher.id,
         student_code: studentCode,
       });
+      
       if (res.data.length === 0) {
         setError('لم يتم العثور على تقارير لهذا الكود. تأكد من الكود المدخل.');
+      } else {
+        setReportsList(res.data);
+        // Automatically select the newest report (first in the DESC updated_at list)
+        setSelectedReport(res.data[0]); 
+        setSelectedReportId(res.data[0].id);
       }
-      setReports(res.data);
     } catch (err) {
       setError('حدث خطأ أثناء البحث. تأكد من الكود أو حاول لاحقاً.');
     } finally {
@@ -143,14 +152,28 @@ const ReportView = () => {
     }
   };
   
+  // Handle report selection from the new dropdown
+  const handleReportSelectChange = (e) => {
+    const reportId = e.target.value;
+    setSelectedReportId(reportId);
+    if (reportId) {
+      const report = reportsList.find(r => r.id == reportId);
+      setSelectedReport(report);
+    } else {
+      setSelectedReport(null);
+    }
+  };
+  
   // [تعديل جذري] دالة التحميل المباشر كـ PDF
-  const handleDownloadPDF = async (reportId) => {
+  const handleDownloadPDF = async () => {
+    if (!selectedReport) return;
+    
+    const reportId = selectedReport.id;
     const reportElement = document.getElementById(`report-${reportId}`);
     const teacherInfoElement = document.querySelector('.teacher-info-card');
     if (!reportElement || !teacherInfoElement) return;
 
     setIsDownloading(true);
-    setCurrentReportId(reportId);
 
     // إضافة الكلاسات مؤقتاً لتطبيق تنسيقات "الطباعة"
     document.body.classList.add('is-printing');
@@ -181,14 +204,13 @@ const ReportView = () => {
         backgroundColor: '#ffffff'
       });
       const reportImgData = reportCanvas.toDataURL('image/png');
-      const reportImgProps = pdf.getImageProperties(reportImgData);
-      const reportImgHeight = (reportImgProps.height * pdfWidth) / reportImgProps.width;
-
-      pdf.addPage();
-      pdf.addImage(reportImgData, 'PNG', 0, 0, pdfWidth, reportImgHeight);
       
+      pdf.addPage();
+      pdf.addImage(reportImgData, 'PNG', 0, 0, pdfWidth, 0); // 0 height will auto-calculate based on width
+
       // 3. الحفظ
-      const fileName = `Report-${teacher.name.replace(' ', '_')}-${studentCode || 'student'}.pdf`;
+      const safeReportName = selectedReport.report_identifier.replace(/[^a-z0-9]/gi, '_');
+      const fileName = `Report-${teacher.name.replace(' ', '_')}-${studentCode || 'student'}-${safeReportName}.pdf`;
       pdf.save(fileName);
 
     } catch (err) {
@@ -197,10 +219,7 @@ const ReportView = () => {
     } finally {
       // إزالة الكلاسات في كل الأحوال
       document.body.classList.remove('is-printing');
-      reportElement.classList.remove('print-this-report');
-      teacherInfoElement.classList.remove('print-this-report');
       setIsDownloading(false);
-      setCurrentReportId(null);
     }
   };
 
@@ -289,7 +308,7 @@ const ReportView = () => {
           </div>
         </motion.form>
 
-        {/* --- 3. عرض النتائج (التقارير) --- */}
+        {/* --- 3. عرض النتائج (قائمة التقارير) --- */}
         <AnimatePresence>
           {loading && (
             <motion.div variants={itemVariants} className="text-center p-10">
@@ -307,61 +326,81 @@ const ReportView = () => {
             </motion.div>
           )}
 
-          {!loading && !error && reports.length === 0 && searched && (
-             <motion.div 
-              variants={itemVariants} 
-              className="flex items-center justify-center gap-3 p-6 bg-spot-darker text-spot-light rounded-lg border border-spot-blue/30"
-            >
-              <FaFileAlt />
-              <span>لا توجد تقارير لعرضها لهذا الكود.</span>
-            </motion.div>
-          )}
-
-          {!loading && !error && reports.length > 0 && (
+          {!loading && !error && searched && (
             <motion.div 
               className="space-y-8"
               variants={containerVariants} 
               initial="hidden"
               animate="visible"
             >
-              {reports.map(report => {
-                const isCurrentDownload = isDownloading && currentReportId === report.id;
-                return (
-                  <motion.div 
-                    key={report.id}
-                    id={`report-${report.id}`}
-                    className="report-card-container bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30"
-                    variants={itemVariants}
+              {reportsList.length === 0 ? (
+                 <motion.div 
+                  variants={itemVariants} 
+                  className="flex items-center justify-center gap-3 p-6 bg-spot-darker text-spot-light rounded-lg border border-spot-blue/30"
+                >
+                  <FaFileAlt />
+                  <span>لا توجد تقارير لعرضها لهذا الكود.</span>
+                </motion.div>
+              ) : (
+                <div className="report-selector mb-8 p-6 bg-spot-darker rounded-lg shadow-lg border border-spot-blue/30">
+                  <label htmlFor="report-select" className="block text-lg font-medium text-spot-light mb-3">
+                    اختيار التقرير الأسبوعي
+                  </label>
+                  <select
+                    id="report-select"
+                    value={selectedReportId}
+                    onChange={handleReportSelectChange}
+                    className="w-full px-4 py-3 bg-spot-dark text-white border border-spot-blue/50 rounded-lg focus:ring-2 focus:ring-spot-cyan focus:border-spot-cyan outline-none transition-all"
                   >
-                    <div className="p-4 bg-spot-dark/50 rounded-t-lg">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">{report.title || 'تقرير أسبوعي'}</h3>
-                        
-                        {/* [تعديل] زر التحميل المباشر */}
-                        <motion.button
-                          onClick={() => handleDownloadPDF(report.id)}
-                          disabled={isDownloading}
-                          className="print-pdf-button flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium text-spot-cyan bg-spot-dark hover:bg-spot-blue transition-all border border-spot-blue disabled:opacity-50"
-                          whileHover={{ scale: isDownloading ? 1 : 1.05, color: isDownloading ? '' : '#e0f4f4' }}
-                        >
-                          {isCurrentDownload ? (
-                            <>
-                              <FaSpinner className="animate-spin" />
-                              <span>جاري الإنشاء...</span>
-                            </>
-                          ) : (
-                            <>
-                              <FaFilePdf />
-                              <span>تحميل كـ PDF</span>
-                            </>
-                          )}
-                        </motion.button>
+                    {reportsList.map(report => (
+                      <option key={report.id} value={report.id}>
+                        {report.title} - (معرّف التقرير: {report.report_identifier})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* --- عرض التقرير المحدد --- */}
+              {selectedReport && (
+                <motion.div 
+                  key={selectedReport.id}
+                  id={`report-${selectedReport.id}`}
+                  className="report-card-container bg-spot-darker rounded-lg shadow-xl border border-spot-blue/30"
+                  variants={itemVariants}
+                >
+                  <div className="p-4 bg-spot-dark/50 rounded-t-lg">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">{selectedReport.title || 'تقرير أسبوعي'}</h3>
+                      <div className="text-sm font-medium text-spot-light">
+                          معرّف التقرير: <span className='text-spot-cyan'>{selectedReport.report_identifier}</span>
                       </div>
+                      
+                      {/* زر التحميل المباشر */}
+                      <motion.button
+                        onClick={handleDownloadPDF}
+                        disabled={isDownloading}
+                        className="print-pdf-button flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium text-spot-cyan bg-spot-dark hover:bg-spot-blue transition-all border border-spot-blue disabled:opacity-50"
+                        whileHover={{ scale: isDownloading ? 1 : 1.05, color: isDownloading ? '' : '#e0f4f4' }}
+                      >
+                        {isDownloading ? (
+                          <>
+                            <FaSpinner className="animate-spin" />
+                            <span>جاري الإنشاء...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaFilePdf />
+                            <span>تحميل كـ PDF</span>
+                          </>
+                        )}
+                      </motion.button>
                     </div>
-                    <ReportTable data={report.data_json} />
-                  </motion.div>
-                );
-              })}
+                  </div>
+                  <ReportTable data={selectedReport.data_json} />
+                </motion.div>
+              )}
+              {/* --- نهاية عرض التقرير المحدد --- */}
             </motion.div>
           )}
         </AnimatePresence>

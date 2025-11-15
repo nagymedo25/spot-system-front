@@ -51,6 +51,7 @@ const HomePage = () => {
       opacity: { value: 0.5, random: true },
       size: { value: 1, max: 2 },
       move: {
+        direction: 'none',
         enable: true,
         speed: 4,
         direction: 'none',
@@ -145,7 +146,7 @@ const HomePage = () => {
           className="absolute top-0 left-0 w-full h-full z-0"
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <h2 className="text-4xl font-bold text-white text-center mb-4 title-pulse-glow">
+          <h2 className="text-4xl font-bold text-white text-center mb-4">
             المعلمون المتاحون
           </h2>
           <p className="text-xl text-spot-light/80 text-center max-w-2xl mx-auto mb-16">

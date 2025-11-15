@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth.js';
-import Footer from './components/layout/Footer.jsx'; // <-- 1. استيراد الفوتر
+import Footer from './components/layout/Footer.jsx';
 
 // Import Admin pages
-// ... (imports)
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageTeachers from './pages/admin/ManageTeachers.jsx';
 
@@ -12,6 +11,7 @@ import ManageTeachers from './pages/admin/ManageTeachers.jsx';
 import TeacherDashboard from './pages/teacher/TeacherDashboard.jsx';
 import MyStudents from './pages/teacher/MyStudents.jsx';
 import CreateReport from './pages/teacher/CreateReport.jsx';
+import ManageReports from './pages/teacher/ManageReports.jsx'; // <-- New Import
 
 // Import Public/Parent pages
 import HomePage from './pages/parent/HomePage.jsx';
@@ -103,9 +103,8 @@ function App() {
         </svg>
       </div>
       
-      {/* --- 2. تطبيق هيكل الفوتر الثابت --- */}
       <div className="flex flex-col min-h-screen">
-        <div className="flex-grow"> {/* هذا العنصر يدفع الفوتر للأسفل */}
+        <div className="flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
@@ -123,6 +122,7 @@ function App() {
             <Route path="/teacher" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>}>
               <Route index element={<MyStudents />} />
               <Route path="report" element={<CreateReport />} />
+              <Route path="reports/manage" element={<ManageReports />} /> {/* <-- New Route */}
             </Route>
             
             {/* Not Found Route */}

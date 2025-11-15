@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const TeacherNav = () => {
@@ -7,7 +6,7 @@ const TeacherNav = () => {
   const inactiveStyle = "text-spot-light hover:bg-spot-darker";
 
   return (
-    <nav className="flex justify-center items-center gap-4 mb-8 bg-spot-dark/50 border border-spot-blue/30 rounded-lg p-2 max-w-md mx-auto">
+    <nav className="flex justify-center items-center gap-4 mb-8 bg-spot-dark/50 border border-spot-blue/30 rounded-lg p-2 max-w-lg mx-auto">
       <NavLink 
         to="/teacher" 
         end // 'end' prop is crucial for NavLink to not match nested routes
@@ -19,7 +18,13 @@ const TeacherNav = () => {
         to="/teacher/report" 
         className={({ isActive }) => `${linkStyle} ${isActive ? activeStyle : inactiveStyle}`}
       >
-        إنشاء تقرير
+        إنشاء تقرير أسبوعي
+      </NavLink>
+      <NavLink 
+        to="/teacher/reports/manage" 
+        className={({ isActive }) => `${linkStyle} ${isActive ? activeStyle : inactiveStyle}`}
+      >
+        إدارة التقارير
       </NavLink>
     </nav>
   );

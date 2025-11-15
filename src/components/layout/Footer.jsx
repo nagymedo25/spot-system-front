@@ -54,7 +54,8 @@ const Footer = () => {
         <p className="text-spot-light/50 text-xs mt-2">
           Developed by{' '}
           <a
-            href="#"
+            target='_blank'
+            href="https://www.facebook.com/mahmoud.nagy.463807"
             className="text-spot-cyan/70 hover:text-spot-cyan transition-colors"
           >
             Mahmoud Nagy
